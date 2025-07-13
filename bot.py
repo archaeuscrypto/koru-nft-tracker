@@ -8,7 +8,7 @@ import asyncio
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = 1393739742234939422  # Replace with your Discord channel ID
-COLLECTION_ADDRESS = 'AWDdLzHkvsaMcwSzEUMb3PxfQTVQhotYhXCk34ZyBuEY'
+COLLECTION_ADDRESS = 'koru'
 
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for commands
