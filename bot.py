@@ -42,10 +42,12 @@ async def track_nft_events():
                 global last_listing_ids
                 new_listings = []
                 for item in data:
-                    if item['id'] not in last_listing_ids:
+                    # Use 'pdaAddress' as the unique ID for listings
+                    listing_id = item.get('pdaAddress')
+                    if listing_id and listing_id not in last_listing_ids:
                         print(f"[NEW LISTING] {item}")
                         new_listings.append(item)
-                        last_listing_ids.add(item['id'])
+                        last_listing_ids.add(listing_id)
                 if new_listings:
                     for item in new_listings:
                         msg = f"New Listing: {item['title']} for {item['price']} SOL\nLink: https://magiceden.io/item-details/{item['mintAddress']}"
