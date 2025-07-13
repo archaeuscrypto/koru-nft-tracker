@@ -50,7 +50,10 @@ async def track_nft_events():
                         last_listing_ids.add(listing_id)
                 if new_listings:
                     for item in new_listings:
-                        msg = f"New Listing: {item['title']} for {item['price']} SOL\nLink: https://magiceden.io/item-details/{item['mintAddress']}"
+                        name = item.get('token', {}).get('name', 'Unknown')
+                        price = item.get('price', 'N/A')
+                        mint = item.get('tokenMint') or item.get('token', {}).get('mintAddress', '')
+                        msg = f"New Listing: {name} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
                         await channel.send(msg)
                         print(f"[SENT] {msg}")
                 else:
