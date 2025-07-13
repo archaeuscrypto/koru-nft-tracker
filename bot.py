@@ -11,6 +11,7 @@ CHANNEL_ID = 1393739742234939422  # Replace with your Discord channel ID
 COLLECTION_ADDRESS = 'AWDdLzHkvsaMcwSzEUMb3PxfQTVQhotYhXCk34ZyBuEY'
 
 intents = discord.Intents.default()
+intents.message_content = True  # Enable message content intent for commands
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 last_listing_ids = set()
