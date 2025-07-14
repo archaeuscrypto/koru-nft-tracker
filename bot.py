@@ -2,8 +2,10 @@ import os
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+
 import aiohttp
 import asyncio
+import json
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -24,6 +26,26 @@ async def clean(ctx):
         return not msg.pinned
     deleted = await ctx.channel.purge(limit=None, check=not_pinned)
     await ctx.send(f"Deleted {len(deleted)} messages.", delete_after=5)
+
+
+
+# Load rarity data once at startup
+RARITY_DATA = None
+RARITY_PATH = os.path.join(os.path.dirname(__file__), 'rarity-ranking.json')
+try:
+    with open(RARITY_PATH, 'r', encoding='utf-8') as f:
+        RARITY_DATA = json.load(f)
+except Exception as e:
+    print(f"[ERROR] Could not load rarity-ranking.json: {e}")
+
+# Tier emojis for rarity
+tier_emojis = {
+    "Mythic": "🟣",
+    "Legendary": "🟡",
+    "Epic": "🟢",
+    "Rare": "🔵",
+    "Common": "⚪"
+}
 
 last_listing_ids = set()
 last_buy_ids = set()
@@ -69,6 +91,8 @@ async def track_nft_events():
                 for item in new_listings:
                     mint = item.get('tokenMint', 'Unknown')
                     price = item.get('price', 'N/A')
+                    lister = item.get('seller', 'Unknown')
+                    lister_link = f'https://solscan.io/account/{lister}' if lister != 'Unknown' else None
                     # Try to get name and image from activity
                     name = item.get('name')
                     image = item.get('image')
@@ -87,17 +111,38 @@ async def track_nft_events():
                         except Exception as e:
                             print(f"[ERROR] Metadata fetch failed for {mint}: {e}")
                     if not name:
-                        # Try to extract #number from mint if possible
                         name = f"NFT {mint[:6]}..."
+
+                    # Extract NFT number from name (e.g., "Koru #1234")
+                    nft_number = None
+                    if name:
+                        import re
+                        match = re.search(r'#(\d+)', name)
+                        if match:
+                            nft_number = match.group(1)
+                    # Lookup rarity info
+
+                    rarity_str = ''
+                    if nft_number and RARITY_DATA and nft_number in RARITY_DATA:
+                        rarity = RARITY_DATA[nft_number]
+                        tier = rarity.get('tier', 'Unknown')
+                        emoji = tier_emojis.get(tier, '')
+                        rarity_str = f"**Rarity:** {emoji} {tier} | **Rank:** {rarity.get('rank', 'N/A')}"
+                    elif nft_number:
+                        rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
+
                     # Build embed
+                    lister_display = f"[`{lister}`]({lister_link})" if lister_link else '`Unknown`'
+                    desc = f"**Price:** {price} SOL\n**Lister:** {lister_display}"
+                    if rarity_str:
+                        desc += f"\n{rarity_str}"
                     embed = discord.Embed(
-                        title=f"{name}",
-                        description=f"**Price:** {price} SOL",
+                        title=f"New Listing: {name}",
+                        description=desc,
                         color=0x2ecc71
                     )
                     if image:
                         embed.set_image(url=image)
-                    embed.add_field(name="Magic Eden", value=f"[View on Magic Eden](https://magiceden.io/item-details/{mint})", inline=False)
                     # If discord.py 2.x+, add a button (try/except for compatibility)
                     components = None
                     try:
@@ -123,6 +168,7 @@ async def track_nft_events():
                 for item in new_buys:
                     price = item.get('price', 'N/A')
                     buyer = item.get('buyer', 'Unknown')
+                    buyer_link = f'https://solscan.io/account/{buyer}' if buyer != 'Unknown' else None
                     mint = item.get('mint', '')
                     # Try to get name and image from activity
                     name = item.get('name')
@@ -143,14 +189,36 @@ async def track_nft_events():
                             print(f"[ERROR] Metadata fetch failed for {mint}: {e}")
                     if not name:
                         name = f"NFT {mint[:6]}..."
+
+                    # Extract NFT number from name (e.g., "Koru #1234")
+                    nft_number = None
+                    if name:
+                        import re
+                        match = re.search(r'#(\d+)', name)
+                        if match:
+                            nft_number = match.group(1)
+                    # Lookup rarity info
+
+                    rarity_str = ''
+                    if nft_number and RARITY_DATA and nft_number in RARITY_DATA:
+                        rarity = RARITY_DATA[nft_number]
+                        tier = rarity.get('tier', 'Unknown')
+                        emoji = tier_emojis.get(tier, '')
+                        rarity_str = f"**Rarity:** {emoji} {tier} | **Rank:** {rarity.get('rank', 'N/A')}"
+                    elif nft_number:
+                        rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
+
+                    buyer_display = f"[`{buyer}`]({buyer_link})" if buyer_link else '`Unknown`'
+                    desc = f"**Sold for:** {price} SOL\n**Buyer:** {buyer_display}"
+                    if rarity_str:
+                        desc += f"\n{rarity_str}"
                     embed = discord.Embed(
-                        title=f"{name}",
-                        description=f"**Sold for:** {price} SOL\n**Buyer:** {buyer}",
+                        title=f"New Buy: {name}",
+                        description=desc,
                         color=0xe67e22
                     )
                     if image:
                         embed.set_image(url=image)
-                    embed.add_field(name="Magic Eden", value=f"[View on Magic Eden](https://magiceden.io/item-details/{mint})", inline=False)
                     components = None
                     try:
                         from discord.ui import Button, View
