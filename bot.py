@@ -1,6 +1,7 @@
 import os
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 from dotenv import load_dotenv
 
 import aiohttp
@@ -16,6 +17,17 @@ COLLECTION_ADDRESS = 'koru'
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for commands
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+# Sync tree for slash commands
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name}')
+    try:
+        synced = await bot.tree.sync()
+        print(f"[LOG] Synced {len(synced)} slash commands.")
+    except Exception as e:
+        print(f"[ERROR] Syncing slash commands: {e}")
+    track_nft_events.start()
 
 @bot.command()
 @commands.has_permissions(manage_messages=True)
@@ -50,10 +62,50 @@ tier_emojis = {
 last_listing_ids = set()
 last_buy_ids = set()
 
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user.name}')
-    track_nft_events.start()
+
+@bot.tree.command(name="topholders", description="Show the top Koru NFT holders.")
+async def toppholders(interaction: discord.Interaction):
+    """Fetch and display the top Koru NFT holders in an embed."""
+    await interaction.response.defer(thinking=True)
+    import requests
+    url = "https://api-mainnet.magiceden.dev/v2/collections/koru/holder_stats"
+    headers = {"accept": "application/json"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            await interaction.followup.send(f"Failed to fetch holder stats: {resp.status_code}")
+            return
+        data = resp.json()
+        holders = data.get('holders', [])
+        if not holders:
+            await interaction.followup.send("No holder data found.")
+            return
+        # Sort by count descending
+        holders = sorted(holders, key=lambda h: h.get('count', 0), reverse=True)
+        top = holders[:20]
+        embed = discord.Embed(
+            title="Top Koru NFT Holders",
+            description="Here are the top 20 holders by number of NFTs held.",
+            color=0x3498db
+        )
+        for idx, holder in enumerate(top, 1):
+            addr = holder.get('address', 'Unknown')
+            count = holder.get('count', 0)
+            solscan = f'https://solscan.io/account/{addr}'
+            # Prefer sol domain if available
+            sol_domain = None
+            owner_display = holder.get('ownerDisplay', {})
+            if isinstance(owner_display, dict):
+                sol_domain = owner_display.get('sol')
+            display_name = sol_domain if sol_domain else f"{addr[:4]}...{addr[-4:]}"
+            embed.add_field(
+                name=f"#{idx}: {display_name}",
+                value=f"NFTs: **{count}** | [Solscan]({solscan})",
+                inline=False
+            )
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"Error fetching top holders: {e}")
 
 @tasks.loop(seconds=60)
 async def track_nft_events():
