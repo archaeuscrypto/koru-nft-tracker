@@ -29,6 +29,7 @@ async def on_ready():
         print(f"[ERROR] Syncing slash commands: {e}")
     track_nft_events.start()
 
+
 @bot.command()
 @commands.has_permissions(manage_messages=True)
 async def clean(ctx):
@@ -67,15 +68,15 @@ last_buy_ids = set()
 async def toppholders(interaction: discord.Interaction):
     """Fetch and display the top Koru NFT holders in an embed."""
     await interaction.response.defer(thinking=True)
-    import requests
     url = "https://api-mainnet.magiceden.dev/v2/collections/koru/holder_stats"
     headers = {"accept": "application/json"}
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        if resp.status_code != 200:
-            await interaction.followup.send(f"Failed to fetch holder stats: {resp.status_code}")
-            return
-        data = resp.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=10) as resp:
+                if resp.status != 200:
+                    await interaction.followup.send(f"Failed to fetch holder stats: {resp.status}")
+                    return
+                data = await resp.json()
         holders = data.get('holders', [])
         if not holders:
             await interaction.followup.send("No holder data found.")
