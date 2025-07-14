@@ -12,7 +12,7 @@ import json
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 # List of Discord channel IDs to send messages to
-CHANNEL_IDS = [1393739742234939422]  # Add more channel IDs as needed
+CHANNEL_IDS = [1393739742234939422, 1394185183959191572]  # Add more channel IDs as needed
 COLLECTION_ADDRESS = 'koru'
 
 intents = discord.Intents.default()
