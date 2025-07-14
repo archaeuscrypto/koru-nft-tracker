@@ -66,7 +66,7 @@ rarity_colors = {
     "Mythic": "#a98dd6",     # 🟣
     "Legendary": "#FFD700",  # 🟡
     "Epic": "#77b058",       # 🟢
-    "Rare": "#1E60B6",       # 🔵
+    "Rare": "#55abed",       # 🔵
     "Common": "#FFFFFF"      # ⚪
 }
 
@@ -203,7 +203,7 @@ async def track_nft_events():
                         desc += f"\n{rarity_str}"
                     desc += f"\n**Seller:** {lister_display}"
                     embed = discord.Embed(
-                        title=f"New Listing: {name}",
+                        title=f"📢 New Listing: {name}",
                         description=desc,
                         color=embed_color
                     )
@@ -282,7 +282,7 @@ async def track_nft_events():
                         desc += f"\n{rarity_str}"
                     desc += f"\n**Buyer:** {buyer_display}"
                     embed = discord.Embed(
-                        title=f"New Buy: {name}",
+                        title=f"🤝 New Buy: {name}",
                         description=desc,
                         color=embed_color
                     )
