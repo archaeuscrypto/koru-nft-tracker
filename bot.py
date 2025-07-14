@@ -11,7 +11,7 @@ import json
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 # List of Discord channel IDs to send messages to
-CHANNEL_IDS = [1393739742234939422, 1394125194569973911]  # Add more channel IDs as needed
+CHANNEL_IDS = [1393739742234939422]  # Add more channel IDs as needed
 COLLECTION_ADDRESS = 'koru'
 
 intents = discord.Intents.default()
@@ -51,6 +51,7 @@ try:
 except Exception as e:
     print(f"[ERROR] Could not load rarity-ranking.json: {e}")
 
+
 # Tier emojis for rarity
 tier_emojis = {
     "Mythic": "🟣",
@@ -59,6 +60,18 @@ tier_emojis = {
     "Rare": "🔵",
     "Common": "⚪"
 }
+
+# Rarity color hex codes for embeds
+rarity_colors = {
+    "Mythic": "#800080",     # 🟣
+    "Legendary": "#FFD700",  # 🟡
+    "Epic": "#00FF00",       # 🟢
+    "Rare": "#0000FF",       # 🔵
+    "Common": "#FFFFFF"      # ⚪
+}
+
+def get_rarity_color(rarity):
+    return int(rarity_colors.get(rarity, "#2ecc71").lstrip('#'), 16)
 
 last_listing_ids = set()
 last_buy_ids = set()
@@ -116,7 +129,7 @@ async def track_nft_events():
         return
     async with aiohttp.ClientSession() as session:
         # Fetch all activities and filter by type in code
-        activities_url = f"https://api-mainnet.magiceden.dev/v2/collections/{COLLECTION_ADDRESS}/activities?offset=0&limit=40"
+        activities_url = f"https://api-mainnet.magiceden.dev/v2/collections/{COLLECTION_ADDRESS}/activities?limit=10"
         print(f"[LOG] Fetching activities from Magic Eden API.")
         async with session.get(activities_url) as resp:
             print(f"[LOG] Activities response status: {resp.status}")
@@ -172,13 +185,14 @@ async def track_nft_events():
                         if match:
                             nft_number = match.group(1)
                     # Lookup rarity info
-
                     rarity_str = ''
+                    embed_color = 0x2ecc71  # default green
                     if nft_number and RARITY_DATA and nft_number in RARITY_DATA:
                         rarity = RARITY_DATA[nft_number]
                         tier = rarity.get('tier', 'Unknown')
                         emoji = tier_emojis.get(tier, '')
                         rarity_str = f"**Rarity:** {emoji} {tier} | **Rank:** {rarity.get('rank', 'N/A')}"
+                        embed_color = get_rarity_color(tier)
                     elif nft_number:
                         rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
 
@@ -191,7 +205,7 @@ async def track_nft_events():
                     embed = discord.Embed(
                         title=f"New Listing: {name}",
                         description=desc,
-                        color=0x2ecc71
+                        color=embed_color
                     )
                     if image:
                         embed.set_image(url=image)
@@ -251,13 +265,14 @@ async def track_nft_events():
                         if match:
                             nft_number = match.group(1)
                     # Lookup rarity info
-
                     rarity_str = ''
+                    embed_color = 0xe67e22  # default orange
                     if nft_number and RARITY_DATA and nft_number in RARITY_DATA:
                         rarity = RARITY_DATA[nft_number]
                         tier = rarity.get('tier', 'Unknown')
                         emoji = tier_emojis.get(tier, '')
                         rarity_str = f"**Rarity:** {emoji} {tier} | **Rank:** {rarity.get('rank', 'N/A')}"
+                        embed_color = get_rarity_color(tier)
                     elif nft_number:
                         rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
 
@@ -269,7 +284,7 @@ async def track_nft_events():
                     embed = discord.Embed(
                         title=f"New Buy: {name}",
                         description=desc,
-                        color=0xe67e22
+                        color=embed_color
                     )
                     if image:
                         embed.set_image(url=image)
