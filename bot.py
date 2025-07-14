@@ -77,12 +77,10 @@ async def toppholders(interaction: discord.Interaction):
                     await interaction.followup.send(f"Failed to fetch holder stats: {resp.status}")
                     return
                 data = await resp.json()
-        holders = data.get('holders', [])
+        holders = data.get('topHolders', [])
         if not holders:
             await interaction.followup.send("No holder data found.")
             return
-        # Sort by count descending
-        holders = sorted(holders, key=lambda h: h.get('count', 0), reverse=True)
         top = holders[:20]
         embed = discord.Embed(
             title="Top Koru NFT Holders",
@@ -90,8 +88,8 @@ async def toppholders(interaction: discord.Interaction):
             color=0x3498db
         )
         for idx, holder in enumerate(top, 1):
-            addr = holder.get('address', 'Unknown')
-            count = holder.get('count', 0)
+            addr = holder.get('owner', 'Unknown')
+            count = holder.get('tokens', 0)
             solscan = f'https://solscan.io/account/{addr}'
             # Prefer sol domain if available
             sol_domain = None
