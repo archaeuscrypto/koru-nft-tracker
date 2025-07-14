@@ -43,6 +43,9 @@ async def track_nft_events():
                 new_buys = []
                 for item in data:
                     activity_type = item.get('type')
+                    # Debug: print type and key IDs for each activity
+                    debug_id = item.get('pdaAddress') or item.get('txId') or item.get('mint') or item.get('tokenMint')
+                    print(f"[DEBUG] Activity type: {activity_type}, ID: {debug_id}")
                     # Listings
                     if activity_type == 'list':
                         listing_id = item.get('pdaAddress')
