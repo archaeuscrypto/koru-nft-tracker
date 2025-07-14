@@ -48,53 +48,42 @@ async def track_nft_events():
             print(f"[LOG] Activities response status: {resp.status}")
             if resp.status == 200:
                 data = await resp.json()
-                # Only process the most recent 3 new listings and 3 new buys per poll
+                # Only send new listings and buys (not previously sent), in chronological order
+                global last_listing_ids, last_buy_ids
                 new_listings = []
                 new_buys = []
-                seen_listing_ids = set()
-                seen_buy_ids = set()
-                for item in data:
-                    activity_type = item.get('type')
-                    debug_id = item.get('tokenMint') or item.get('txId') or item.get('mint')
-                    print(f"[DEBUG] Activity type: {activity_type}, ID: {debug_id}")
-                    # Listings
-                    if activity_type == 'list':
+                # Collect new listings (oldest first)
+                for item in reversed(data):
+                    if item.get('type') == 'list':
                         listing_id = item.get('tokenMint')
-                        if listing_id and listing_id not in seen_listing_ids:
+                        if listing_id and listing_id not in last_listing_ids:
                             new_listings.append(item)
-                            seen_listing_ids.add(listing_id)
-                            if len(new_listings) >= 3:
-                                break
-                # Now do the same for buys (after listings loop)
-                for item in data:
-                    activity_type = item.get('type')
-                    if activity_type == 'buyNow':
+                # Collect new buys (oldest first)
+                for item in reversed(data):
+                    if item.get('type') == 'buyNow':
                         tx_id = item.get('txId')
-                        if tx_id and tx_id not in seen_buy_ids:
+                        if tx_id and tx_id not in last_buy_ids:
                             new_buys.append(item)
-                            seen_buy_ids.add(tx_id)
-                            if len(new_buys) >= 3:
-                                break
-                # Send new listings
-                if new_listings:
-                    for item in new_listings:
-                        mint = item.get('tokenMint', 'Unknown')
-                        price = item.get('price', 'N/A')
-                        msg = f"New Listing: {mint} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
-                        await channel.send(msg)
-                        print(f"[SENT] Listing: {mint} for {price} SOL")
-                else:
+                # Send new listings (oldest first)
+                for item in new_listings:
+                    mint = item.get('tokenMint', 'Unknown')
+                    price = item.get('price', 'N/A')
+                    msg = f"New Listing: {mint} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
+                    await channel.send(msg)
+                    print(f"[SENT] Listing: {mint} for {price} SOL")
+                    last_listing_ids.add(mint)
+                if not new_listings:
                     print("[LOG] No new listings found.")
-                # Send new buys
-                if new_buys:
-                    for item in new_buys:
-                        price = item.get('price', 'N/A')
-                        buyer = item.get('buyer', 'Unknown')
-                        mint = item.get('mint', '')
-                        msg = f"New Buy: {price} SOL by {buyer}\nLink: https://magiceden.io/item-details/{mint}"
-                        await channel.send(msg)
-                        print(f"[SENT] Buy: {price} SOL by {buyer}")
-                else:
+                # Send new buys (oldest first)
+                for item in new_buys:
+                    price = item.get('price', 'N/A')
+                    buyer = item.get('buyer', 'Unknown')
+                    mint = item.get('mint', '')
+                    msg = f"New Buy: {price} SOL by {buyer}\nLink: https://magiceden.io/item-details/{mint}"
+                    await channel.send(msg)
+                    print(f"[SENT] Buy: {price} SOL by {buyer}")
+                    last_buy_ids.add(item.get('txId'))
+                if not new_buys:
                     print("[LOG] No new buys found.")
             else:
                 print(f"[ERROR] Failed to fetch activities: {resp.status}")
