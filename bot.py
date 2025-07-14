@@ -148,8 +148,8 @@ async def track_nft_events():
                 # Collect new buys (oldest first)
                 for item in reversed(data):
                     if item.get('type') == 'buyNow':
-                        tx_id = item.get('txId')
-                        if tx_id and tx_id not in last_buy_ids:
+                        mint = item.get('tokenMint')
+                        if mint and mint not in last_buy_ids:
                             new_buys.append(item)
                 # Send new listings (oldest first) as embeds with fallbacks
                 for item in new_listings:
@@ -203,13 +203,13 @@ async def track_nft_events():
                         desc += f"\n{rarity_str}"
                     desc += f"\n**Seller:** {lister_display}"
                     embed = discord.Embed(
-                        title=f"📢 New Listing: {name}",
+                        title=f"🔥 New Listing: {name}",
                         description=desc,
                         color=embed_color
                     )
                     if image:
                         embed.set_image(url=image)
-                    # If discord.py 2.x+, add a button (try/except for compatibility)
+                    
                     components = None
                     try:
                         from discord.ui import Button, View
