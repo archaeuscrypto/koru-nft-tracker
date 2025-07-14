@@ -1,3 +1,4 @@
+
 import os
 import discord
 from discord.ext import commands, tasks
@@ -17,6 +18,20 @@ COLLECTION_ADDRESS = 'koru'
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for commands
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+ALLOWED_USER_IDS = {826986855412531202}  # Replace with actual allowed user IDs (as integers)
+
+@bot.event
+async def on_message(message):
+    # Allow messages from the bot itself and allowed users
+    if message.author == bot.user or message.author.id in ALLOWED_USER_IDS:
+        await bot.process_commands(message)
+        return
+    # Delete all other user messages in the channel
+    try:
+        await message.delete()
+    except Exception as e:
+        print(f"[ERROR] Could not delete message from {message.author}: {e}")
 
 # Sync tree for slash commands
 @bot.event
@@ -282,7 +297,7 @@ async def track_nft_events():
                         desc += f"\n{rarity_str}"
                     desc += f"\n**Buyer:** {buyer_display}"
                     embed = discord.Embed(
-                        title=f"🤝 New Buy: {name}",
+                        title=f"🎉 New Buy: {name}",
                         description=desc,
                         color=embed_color
                     )
