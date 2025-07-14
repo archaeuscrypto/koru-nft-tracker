@@ -55,11 +55,11 @@ async def track_nft_events():
                 seen_buy_ids = set()
                 for item in data:
                     activity_type = item.get('type')
-                    debug_id = item.get('pdaAddress') or item.get('txId') or item.get('mint') or item.get('tokenMint')
+                    debug_id = item.get('tokenMint') or item.get('txId') or item.get('mint')
                     print(f"[DEBUG] Activity type: {activity_type}, ID: {debug_id}")
                     # Listings
                     if activity_type == 'list':
-                        listing_id = item.get('pdaAddress')
+                        listing_id = item.get('tokenMint')
                         if listing_id and listing_id not in seen_listing_ids:
                             new_listings.append(item)
                             seen_listing_ids.add(listing_id)
@@ -78,12 +78,11 @@ async def track_nft_events():
                 # Send new listings
                 if new_listings:
                     for item in new_listings:
-                        name = item.get('token', {}).get('name', 'Unknown')
+                        mint = item.get('tokenMint', 'Unknown')
                         price = item.get('price', 'N/A')
-                        mint = item.get('tokenMint') or item.get('token', {}).get('mintAddress', '')
-                        msg = f"New Listing: {name} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
+                        msg = f"New Listing: {mint} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
                         await channel.send(msg)
-                        print(f"[SENT] Listing: {name} for {price} SOL")
+                        print(f"[SENT] Listing: {mint} for {price} SOL")
                 else:
                     print("[LOG] No new listings found.")
                 # Send new buys
