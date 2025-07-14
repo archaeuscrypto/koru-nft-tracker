@@ -65,27 +65,108 @@ async def track_nft_events():
                         tx_id = item.get('txId')
                         if tx_id and tx_id not in last_buy_ids:
                             new_buys.append(item)
-                # Send new listings (oldest first)
+                # Send new listings (oldest first) as embeds with fallbacks
                 for item in new_listings:
                     mint = item.get('tokenMint', 'Unknown')
                     price = item.get('price', 'N/A')
-                    msg = f"New Listing: {mint} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
+                    # Try to get name and image from activity
+                    name = item.get('name')
+                    image = item.get('image')
+                    # Fallback: fetch metadata if missing
+                    if not name or not image:
+                        try:
+                            async with aiohttp.ClientSession() as meta_session:
+                                meta_url = f"https://api-mainnet.magiceden.dev/v2/tokens/{mint}"
+                                async with meta_session.get(meta_url) as meta_resp:
+                                    if meta_resp.status == 200:
+                                        meta = await meta_resp.json()
+                                        if not name:
+                                            name = meta.get('name', mint)
+                                        if not image:
+                                            image = meta.get('image')
+                        except Exception as e:
+                            print(f"[ERROR] Metadata fetch failed for {mint}: {e}")
+                    if not name:
+                        # Try to extract #number from mint if possible
+                        name = f"NFT {mint[:6]}..."
+                    # Build embed
+                    embed = discord.Embed(
+                        title=f"{name}",
+                        description=f"**Price:** {price} SOL",
+                        color=0x2ecc71
+                    )
+                    if image:
+                        embed.set_image(url=image)
+                    embed.add_field(name="Magic Eden", value=f"[View on Magic Eden](https://magiceden.io/item-details/{mint})", inline=False)
+                    # If discord.py 2.x+, add a button (try/except for compatibility)
+                    components = None
+                    try:
+                        from discord.ui import Button, View
+                        class MEView(View):
+                            def __init__(self):
+                                super().__init__()
+                                self.add_item(Button(label="View on Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
+                        components = MEView()
+                    except Exception:
+                        pass
                     for channel in channels:
                         if channel:
-                            await channel.send(msg)
-                    print(f"[SENT] Listing: {mint} for {price} SOL")
+                            if components:
+                                await channel.send(embed=embed, view=components)
+                            else:
+                                await channel.send(embed=embed)
+                    print(f"[SENT] Listing: {name} for {price} SOL")
                     last_listing_ids.add(mint)
                 if not new_listings:
                     print("[LOG] No new listings found.")
-                # Send new buys (oldest first)
+                # Send new buys (oldest first) as embeds with fallbacks
                 for item in new_buys:
                     price = item.get('price', 'N/A')
                     buyer = item.get('buyer', 'Unknown')
                     mint = item.get('mint', '')
-                    msg = f"New Buy: {price} SOL by {buyer}\nLink: https://magiceden.io/item-details/{mint}"
+                    # Try to get name and image from activity
+                    name = item.get('name')
+                    image = item.get('image')
+                    # Fallback: fetch metadata if missing
+                    if mint and (not name or not image):
+                        try:
+                            async with aiohttp.ClientSession() as meta_session:
+                                meta_url = f"https://api-mainnet.magiceden.dev/v2/tokens/{mint}"
+                                async with meta_session.get(meta_url) as meta_resp:
+                                    if meta_resp.status == 200:
+                                        meta = await meta_resp.json()
+                                        if not name:
+                                            name = meta.get('name', mint)
+                                        if not image:
+                                            image = meta.get('image')
+                        except Exception as e:
+                            print(f"[ERROR] Metadata fetch failed for {mint}: {e}")
+                    if not name:
+                        name = f"NFT {mint[:6]}..."
+                    embed = discord.Embed(
+                        title=f"{name}",
+                        description=f"**Sold for:** {price} SOL\n**Buyer:** {buyer}",
+                        color=0xe67e22
+                    )
+                    if image:
+                        embed.set_image(url=image)
+                    embed.add_field(name="Magic Eden", value=f"[View on Magic Eden](https://magiceden.io/item-details/{mint})", inline=False)
+                    components = None
+                    try:
+                        from discord.ui import Button, View
+                        class MEView(View):
+                            def __init__(self):
+                                super().__init__()
+                                self.add_item(Button(label="View on Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
+                        components = MEView()
+                    except Exception:
+                        pass
                     for channel in channels:
                         if channel:
-                            await channel.send(msg)
+                            if components:
+                                await channel.send(embed=embed, view=components)
+                            else:
+                                await channel.send(embed=embed)
                     print(f"[SENT] Buy: {price} SOL by {buyer}")
                     last_buy_ids.add(item.get('txId'))
                 if not new_buys:
