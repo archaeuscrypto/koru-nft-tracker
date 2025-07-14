@@ -7,7 +7,8 @@ import asyncio
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-CHANNEL_ID = 1393739742234939422  # Replace with your Discord channel ID
+# List of Discord channel IDs to send messages to
+CHANNEL_IDS = [1393739742234939422, 1394125194569973911]  # Add more channel IDs as needed
 COLLECTION_ADDRESS = 'koru'
 
 intents = discord.Intents.default()
@@ -35,10 +36,10 @@ async def on_ready():
 @tasks.loop(seconds=60)
 async def track_nft_events():
     await bot.wait_until_ready()
-    channel = bot.get_channel(CHANNEL_ID)
-    print(f"[LOG] Checking events for collection {COLLECTION_ADDRESS} in channel {CHANNEL_ID}")
-    if channel is None:
-        print(f"[ERROR] Channel with ID {CHANNEL_ID} not found.")
+    channels = [bot.get_channel(cid) for cid in CHANNEL_IDS]
+    print(f"[LOG] Checking events for collection {COLLECTION_ADDRESS} in channels {CHANNEL_IDS}")
+    if not any(channels):
+        print(f"[ERROR] None of the channels in {CHANNEL_IDS} were found.")
         return
     async with aiohttp.ClientSession() as session:
         # Fetch all activities and filter by type in code
@@ -69,7 +70,9 @@ async def track_nft_events():
                     mint = item.get('tokenMint', 'Unknown')
                     price = item.get('price', 'N/A')
                     msg = f"New Listing: {mint} for {price} SOL\nLink: https://magiceden.io/item-details/{mint}"
-                    await channel.send(msg)
+                    for channel in channels:
+                        if channel:
+                            await channel.send(msg)
                     print(f"[SENT] Listing: {mint} for {price} SOL")
                     last_listing_ids.add(mint)
                 if not new_listings:
@@ -80,7 +83,9 @@ async def track_nft_events():
                     buyer = item.get('buyer', 'Unknown')
                     mint = item.get('mint', '')
                     msg = f"New Buy: {price} SOL by {buyer}\nLink: https://magiceden.io/item-details/{mint}"
-                    await channel.send(msg)
+                    for channel in channels:
+                        if channel:
+                            await channel.send(msg)
                     print(f"[SENT] Buy: {price} SOL by {buyer}")
                     last_buy_ids.add(item.get('txId'))
                 if not new_buys:
