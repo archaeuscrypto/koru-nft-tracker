@@ -291,11 +291,14 @@ async def track_nft_events():
                     elif nft_number:
                         rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
 
-                    buyer_display = f"[`{buyer}`]({buyer_link})" if buyer_link else '`Unknown`'
+                    buyer_display = f"[Buyer]({buyer_link})" if buyer_link else '`Unknown`'
+                    seller = item.get('seller', 'Unknown')
+                    seller_link = f'https://solscan.io/account/{seller}' if seller != 'Unknown' else None
+                    seller_display = f"[Seller]({seller_link})" if seller_link else '`Unknown`'
                     desc = f"**Sold for:** {price} SOL"
                     if rarity_str:
                         desc += f"\n{rarity_str}"
-                    desc += f"\n**Buyer:** {buyer_display}"
+                    desc += f"\n{seller_display} 🤝 {buyer_display}"
                     embed = discord.Embed(
                         title=f"🎉 New Buy: {name}",
                         description=desc,
