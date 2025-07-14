@@ -75,10 +75,11 @@ async def track_nft_events():
                 global last_buy_ids
                 new_buys = []
                 for item in data:
-                    if item['txId'] not in last_buy_ids:
+                    tx_id = item.get('txId')
+                    if tx_id and tx_id not in last_buy_ids:
                         print(f"[NEW BUY] {item}")
                         new_buys.append(item)
-                        last_buy_ids.add(item['txId'])
+                        last_buy_ids.add(tx_id)
                 if new_buys:
                     for item in new_buys:
                         price = item.get('price', 'N/A')
