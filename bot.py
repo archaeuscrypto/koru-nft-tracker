@@ -305,7 +305,7 @@ async def track_nft_events():
                             else:
                                 await channel.send(embed=embed)
                     print(f"[SENT] Buy: {price} SOL by {buyer}")
-                    last_buy_ids.add(item.get('txId'))
+                    last_buy_ids.add(mint)
                 if not new_buys:
                     print("[LOG] No new buys found.")
             else:
