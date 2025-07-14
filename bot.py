@@ -81,7 +81,7 @@ async def toppholders(interaction: discord.Interaction):
         if not holders:
             await interaction.followup.send("No holder data found.")
             return
-        top = holders[:20]
+        top = holders[:30]
         embed = discord.Embed(
             title="Top Koru NFT Holders",
             description="Here are the top 20 holders by number of NFTs held.",
@@ -102,7 +102,7 @@ async def toppholders(interaction: discord.Interaction):
                 value=f"NFTs: **{count}** | [Solscan]({solscan})",
                 inline=False
             )
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed, ephemeral=True)
     except Exception as e:
         await interaction.followup.send(f"Error fetching top holders: {e}")
 
@@ -221,7 +221,8 @@ async def track_nft_events():
                     price = item.get('price', 'N/A')
                     buyer = item.get('buyer', 'Unknown')
                     buyer_link = f'https://solscan.io/account/{buyer}' if buyer != 'Unknown' else None
-                    mint = item.get('mint', '')
+                    # Use tokenMint for consistency, fallback to mint
+                    mint = item.get('tokenMint') or item.get('mint', '')
                     # Try to get name and image from activity
                     name = item.get('name')
                     image = item.get('image')
