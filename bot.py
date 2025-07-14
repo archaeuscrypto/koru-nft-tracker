@@ -32,7 +32,7 @@ async def track_nft_events():
         return
     async with aiohttp.ClientSession() as session:
         # Track new listings
-        listings_url = f"https://api-mainnet.magiceden.dev/v2/collections/{COLLECTION_ADDRESS}/listings?offset=0&limit=20&type=list"
+        listings_url = f"https://api-mainnet.magiceden.dev/v2/collections/{COLLECTION_ADDRESS}/activities?offset=0&limit=20&type=list"
         print(f"[LOG] Fetching listings from: {listings_url}")
         async with session.get(listings_url) as resp:
             print(f"[LOG] Listings response status: {resp.status}")
