@@ -63,10 +63,10 @@ tier_emojis = {
 
 # Rarity color hex codes for embeds
 rarity_colors = {
-    "Mythic": "#800080",     # 🟣
+    "Mythic": "#a98dd6",     # 🟣
     "Legendary": "#FFD700",  # 🟡
-    "Epic": "#00FF00",       # 🟢
-    "Rare": "#0000FF",       # 🔵
+    "Epic": "#77b058",       # 🟢
+    "Rare": "#1E60B6",       # 🔵
     "Common": "#FFFFFF"      # ⚪
 }
 
