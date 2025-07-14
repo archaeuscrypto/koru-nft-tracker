@@ -248,7 +248,7 @@ async def track_nft_events():
                         class MEView(View):
                             def __init__(self):
                                 super().__init__()
-                                self.add_item(Button(label="View on Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
+                                self.add_item(Button(label="Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
                                 if floor_sol is not None:
                                     self.add_item(Button(label=f"Floor: {floor_sol:.2f} SOL", disabled=True))
                                 else:
@@ -312,6 +312,23 @@ async def track_nft_events():
                     elif nft_number:
                         rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
 
+                    # Fetch floor price for buy messages
+                    floor_price = None
+                    try:
+                        stats_url = f"https://api-mainnet.magiceden.dev/v2/collections/{COLLECTION_ADDRESS}/stats"
+                        async with session.get(stats_url) as stats_resp:
+                            if stats_resp.status == 200:
+                                stats_data = await stats_resp.json()
+                                floor_price = stats_data.get('floorPrice')
+                    except Exception as e:
+                        print(f"[ERROR] Could not fetch floor price: {e}")
+                    floor_sol = None
+                    if floor_price:
+                        try:
+                            floor_sol = float(floor_price) / 1_000_000_000
+                        except Exception:
+                            floor_sol = None
+
                     buyer_display = f"[Buyer]({buyer_link})" if buyer_link else '`Unknown`'
                     seller = item.get('seller', 'Unknown')
                     seller_link = f'https://solscan.io/account/{seller}' if seller != 'Unknown' else None
@@ -333,7 +350,11 @@ async def track_nft_events():
                         class MEView(View):
                             def __init__(self):
                                 super().__init__()
-                                self.add_item(Button(label="View on Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
+                                self.add_item(Button(label="Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
+                                if floor_sol is not None:
+                                    self.add_item(Button(label=f"Floor: {floor_sol:.2f} SOL", disabled=True))
+                                else:
+                                    self.add_item(Button(label="Floor: N/A", disabled=True))
                         components = MEView()
                     except Exception:
                         pass
