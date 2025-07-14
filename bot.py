@@ -212,11 +212,11 @@ async def track_nft_events():
                         rarity_str = "**Rarity:** Unknown | **Rank:** N/A"
 
                     # Build embed
-                    lister_display = f"[`{lister}`]({lister_link})" if lister_link else '`Unknown`'
+                    lister_display = f"[Seller]({lister_link})" if lister_link else '`Unknown`'
                     desc = f"**Price:** {price} SOL"
                     if rarity_str:
                         desc += f"\n{rarity_str}"
-                    desc += f"\n**Seller:** {lister_display}"
+                    desc += f"\n\n{lister_display}"
                     embed = discord.Embed(
                         title=f"🔥 New Listing: {name}",
                         description=desc,
@@ -298,7 +298,7 @@ async def track_nft_events():
                     desc = f"**Sold for:** {price} SOL"
                     if rarity_str:
                         desc += f"\n{rarity_str}"
-                    desc += f"\n{seller_display} 🤝 {buyer_display}"
+                    desc += f"\n\n{seller_display} 🤝 {buyer_display}"
                     embed = discord.Embed(
                         title=f"🎉 New Buy: {name}",
                         description=desc,
