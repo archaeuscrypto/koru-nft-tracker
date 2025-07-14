@@ -109,10 +109,10 @@ async def toppholders(interaction: discord.Interaction):
         if not holders:
             await interaction.followup.send("No holder data found.")
             return
-        top = holders[:30]
+        top = holders[:25]
         embed = discord.Embed(
             title="Top Koru NFT Holders",
-            description="Here are the top 20 holders by number of NFTs held.",
+            description="Here are the top 25 holders by number of NFTs held.",
             color=0x3498db
         )
         for idx, holder in enumerate(top, 1):
