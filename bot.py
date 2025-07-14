@@ -37,6 +37,9 @@ async def on_message(message):
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
+    # Set bot status and activity
+    activity = discord.Game(name="Tracking a wild Koru")
+    await bot.change_presence(status=discord.Status.online, activity=activity)
     try:
         synced = await bot.tree.sync()
         print(f"[LOG] Synced {len(synced)} slash commands.")
