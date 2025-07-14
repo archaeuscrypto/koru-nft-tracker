@@ -250,7 +250,7 @@ async def track_nft_events():
                                 super().__init__()
                                 self.add_item(Button(label="Magic Eden", url=f"https://magiceden.io/item-details/{mint}"))
                                 if floor_sol is not None:
-                                    self.add_item(Button(label=f"Floor: {floor_sol:.2f} SOL", disabled=True))
+                                    self.add_item(Button(label=f"Floor: {floor_sol:.3f} SOL", disabled=True))
                                 else:
                                     self.add_item(Button(label="Floor: N/A", disabled=True))
                         components = MEView()
