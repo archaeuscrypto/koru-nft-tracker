@@ -19,7 +19,7 @@ intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for commands
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-ALLOWED_USER_IDS = {826986855412531202}  # Replace with actual allowed user IDs (as integers)
+ALLOWED_USER_IDS = {908499792043335680}  # Replace with actual allowed user IDs (as integers)
 
 @bot.event
 async def on_message(message):
