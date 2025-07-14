@@ -14,6 +14,16 @@ intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for commands
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def clean(ctx):
+    """Delete all messages in the current channel."""
+    await ctx.send("Cleaning up messages...", delete_after=2)
+    def not_pinned(msg):
+        return not msg.pinned
+    deleted = await ctx.channel.purge(limit=None, check=not_pinned)
+    await ctx.send(f"Deleted {len(deleted)} messages.", delete_after=5)
+
 last_listing_ids = set()
 last_buy_ids = set()
 
@@ -38,28 +48,33 @@ async def track_nft_events():
             print(f"[LOG] Activities response status: {resp.status}")
             if resp.status == 200:
                 data = await resp.json()
-                global last_listing_ids, last_buy_ids
+                # Only process the most recent 3 new listings and 3 new buys per poll
                 new_listings = []
                 new_buys = []
+                seen_listing_ids = set()
+                seen_buy_ids = set()
                 for item in data:
                     activity_type = item.get('type')
-                    # Debug: print type and key IDs for each activity
                     debug_id = item.get('pdaAddress') or item.get('txId') or item.get('mint') or item.get('tokenMint')
                     print(f"[DEBUG] Activity type: {activity_type}, ID: {debug_id}")
                     # Listings
                     if activity_type == 'list':
                         listing_id = item.get('pdaAddress')
-                        if listing_id and listing_id not in last_listing_ids:
-                            print(f"[NEW LISTING] {listing_id}")
+                        if listing_id and listing_id not in seen_listing_ids:
                             new_listings.append(item)
-                            last_listing_ids.add(listing_id)
-                    # Buys
-                    elif activity_type == 'buyNow':
+                            seen_listing_ids.add(listing_id)
+                            if len(new_listings) >= 3:
+                                break
+                # Now do the same for buys (after listings loop)
+                for item in data:
+                    activity_type = item.get('type')
+                    if activity_type == 'buyNow':
                         tx_id = item.get('txId')
-                        if tx_id and tx_id not in last_buy_ids:
-                            print(f"[NEW BUY] {tx_id}")
+                        if tx_id and tx_id not in seen_buy_ids:
                             new_buys.append(item)
-                            last_buy_ids.add(tx_id)
+                            seen_buy_ids.add(tx_id)
+                            if len(new_buys) >= 3:
+                                break
                 # Send new listings
                 if new_listings:
                     for item in new_listings:
@@ -82,11 +97,6 @@ async def track_nft_events():
                         print(f"[SENT] Buy: {price} SOL by {buyer}")
                 else:
                     print("[LOG] No new buys found.")
-                # Keep only the latest 50 IDs
-                if len(last_listing_ids) > 50:
-                    last_listing_ids = set(list(last_listing_ids)[-50:])
-                if len(last_buy_ids) > 50:
-                    last_buy_ids = set(list(last_buy_ids)[-50:])
             else:
                 print(f"[ERROR] Failed to fetch activities: {resp.status}")
 
