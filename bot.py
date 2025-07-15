@@ -21,6 +21,13 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 ALLOWED_USER_IDS = {908499792043335680}  # Replace with actual allowed user IDs (as integers)
 
+RARITY_ROLE_IDS = {
+    "mythic": 1394729409243643995,
+    "legendary": 1394729689909559417,
+    "epic": 1394729993615183972,
+    "rare": 1394730089480196158
+}
+
 @bot.event
 async def on_message(message):
     # Allow messages from the bot itself and allowed users
@@ -57,6 +64,36 @@ async def clean(ctx):
         return not msg.pinned
     deleted = await ctx.channel.purge(limit=None, check=not_pinned)
     await ctx.send(f"Deleted {len(deleted)} messages.", delete_after=5)
+
+@bot.tree.command(name="sub", description="Subscribe to rarity notifications.")
+@app_commands.describe(tier="Rarity tier to subscribe to (mythic, legendary, epic, or rare)")
+async def sub(interaction: discord.Interaction, tier: str):
+    tier = tier.capitalize()
+    role_id = RARITY_ROLE_IDS.get(tier)
+    if not role_id:
+        await interaction.response.send_message("❌ Unknown tier. Try mythic, legendary, epic, or rare", ephemeral=True)
+        return
+    role = interaction.guild.get_role(role_id)
+    if not role:
+        await interaction.response.send_message("❌ Role not found in this server.", ephemeral=True)
+        return
+    await interaction.user.add_roles(role)
+    await interaction.response.send_message(f"✅ Subscribed to **{tier}** alerts!", ephemeral=True)
+
+@bot.tree.command(name="unsub", description="Unsubscribe from rarity notifications.")
+@app_commands.describe(tier="Rarity tier to unsubscribe from (mythic, legendary, epic, or rare)")
+async def unsub(interaction: discord.Interaction, tier: str):
+    tier = tier.capitalize()
+    role_id = RARITY_ROLE_IDS.get(tier)
+    if not role_id:
+        await interaction.response.send_message("❌ Unknown tier. Try mythic, legendary, epic, or rare.", ephemeral=True)
+        return
+    role = interaction.guild.get_role(role_id)
+    if not role:
+        await interaction.response.send_message("❌ Role not found in this server.", ephemeral=True)
+        return
+    await interaction.user.remove_roles(role)
+    await interaction.response.send_message(f"✅ Unsubscribed from **{tier}** alerts.", ephemeral=True)
 
 
 
@@ -236,7 +273,13 @@ async def track_nft_events():
                     desc = f"**Price:** {price} SOL"
                     if rarity_str:
                         desc += f"\n{rarity_str}"
-                    desc += f"\n\n{lister_display}"
+                    # Add rarity role ping if valid tier and role ID
+                    role_id = RARITY_ROLE_IDS.get(tier)
+                    if role_id:
+                        desc += f"\n\n<@&{role_id}>"
+                    else:
+                        desc += f"\n\n{lister_display}"
+
                     embed = discord.Embed(
                         title=f"🔥 New Listing: {name}",
                         description=desc,
