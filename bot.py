@@ -30,10 +30,10 @@ RARITY_ROLE_IDS = {
 }
 
 TIER_ROLES = {
-    "mythic": "Mythic Alerts",
-    "legendary": "Legendary Alerts",
-    "epic": "Epic Alerts",
-    "rare": "Rare Alerts"
+    "mythic": "Mythic Hunter",
+    "legendary": "Legendary Seeker",
+    "epic": "Epic Tracker",
+    "rare": "Rare Chaser"
 }
 
 @bot.event
