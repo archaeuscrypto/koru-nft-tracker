@@ -291,9 +291,12 @@ async def track_nft_events():
                     if rarity_str:
                         desc += f"\n{rarity_str}"
                     # Add rarity role ping if valid tier and role ID
-                    role_id = RARITY_ROLE_IDS.get(tier)
-                    if role_id:
-                        desc += f"\n\n<@&{role_id}>"
+                    if 'tier' in locals():
+                        role_id = RARITY_ROLE_IDS.get(tier.lower())
+                        if role_id:
+                            desc += f"\n\n<@&{role_id}>"
+                        else:
+                            desc += f"\n\n{lister_display}"
                     else:
                         desc += f"\n\n{lister_display}"
 
