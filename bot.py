@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import aiohttp
 import asyncio
 import json
+from typing import Literal
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -65,36 +66,52 @@ async def clean(ctx):
     deleted = await ctx.channel.purge(limit=None, check=not_pinned)
     await ctx.send(f"Deleted {len(deleted)} messages.", delete_after=5)
 
-@bot.tree.command(name="sub", description="Subscribe to rarity notifications.")
-@app_commands.describe(tier="Rarity tier to subscribe to (mythic, legendary, epic, or rare)")
-async def sub(interaction: discord.Interaction, tier: str):
-    tier = tier.capitalize()
-    role_id = RARITY_ROLE_IDS.get(tier)
-    if not role_id:
-        await interaction.response.send_message("❌ Unknown tier. Try mythic, legendary, epic, or rare", ephemeral=True)
-        return
-    role = interaction.guild.get_role(role_id)
-    if not role:
-        await interaction.response.send_message("❌ Role not found in this server.", ephemeral=True)
-        return
-    await interaction.user.add_roles(role)
-    await interaction.response.send_message(f"✅ Subscribed to **{tier}** alerts!", ephemeral=True)
+@bot.tree.command(name="sub", description="Subscribe to rarity alerts")
+@app_commands.describe(tier="Choose a rarity tier to subscribe to")
+async def sub(interaction: discord.Interaction, tier: Literal["mythic", "legendary", "epic", "rare"]):
+    guild = interaction.guild
+    role_name = TIER_ROLES[tier]
+    role = discord.utils.get(guild.roles, name=role_name)
 
-@bot.tree.command(name="unsub", description="Unsubscribe from rarity notifications.")
-@app_commands.describe(tier="Rarity tier to unsubscribe from (mythic, legendary, epic, or rare)")
-async def unsub(interaction: discord.Interaction, tier: str):
-    tier = tier.capitalize()
-    role_id = RARITY_ROLE_IDS.get(tier)
-    if not role_id:
-        await interaction.response.send_message("❌ Unknown tier. Try mythic, legendary, epic, or rare.", ephemeral=True)
+    if role is None:
+        await interaction.response.send_message(
+            f"❌ Role **{role_name}** not found. Ask an admin to create it.",
+            ephemeral=True
+        )
         return
-    role = interaction.guild.get_role(role_id)
-    if not role:
-        await interaction.response.send_message("❌ Role not found in this server.", ephemeral=True)
-        return
-    await interaction.user.remove_roles(role)
-    await interaction.response.send_message(f"✅ Unsubscribed from **{tier}** alerts.", ephemeral=True)
 
+    try:
+        await interaction.user.add_roles(role)
+        await interaction.response.send_message(
+            f"✅ Subscribed to **{tier.title()}** alerts! ({role.mention})",
+            ephemeral=True
+        )
+    except Exception as e:
+        await interaction.response.send_message(f"Error assigning role: {e}", ephemeral=True)
+
+
+@bot.tree.command(name="unsub", description="Unsubscribe from rarity alerts")
+@app_commands.describe(tier="Choose a rarity tier to unsubscribe from")
+async def unsub(interaction: discord.Interaction, tier: Literal["mythic", "legendary", "epic", "rare"]):
+    guild = interaction.guild
+    role_name = TIER_ROLES[tier]
+    role = discord.utils.get(guild.roles, name=role_name)
+
+    if role is None:
+        await interaction.response.send_message(
+            f"❌ Role **{role_name}** not found. Nothing to remove.",
+            ephemeral=True
+        )
+        return
+
+    try:
+        await interaction.user.remove_roles(role)
+        await interaction.response.send_message(
+            f"✅ Unsubscribed from **{tier.title()}** alerts.",
+            ephemeral=True
+        )
+    except Exception as e:
+        await interaction.response.send_message(f"Error removing role: {e}", ephemeral=True)
 
 
 # Load rarity data once at startup
