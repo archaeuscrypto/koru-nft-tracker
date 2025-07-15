@@ -298,14 +298,17 @@ async def track_nft_events():
                     if rarity_str:
                         desc += f"\n{rarity_str}"
                     # Add rarity role ping if valid tier and role ID
+                    role_mention = None
                     if 'tier' in locals():
                         role_id = RARITY_ROLE_IDS.get(tier.lower())
                         if role_id:
-                            desc += f"\n\n<@&{role_id}>"
+                            role_mention = f"<@&{role_id}>"
+                            desc += f"\n\n{lister_display}"  # keep lister in embed
                         else:
                             desc += f"\n\n{lister_display}"
                     else:
                         desc += f"\n\n{lister_display}"
+
 
                     embed = discord.Embed(
                         title=f"🔥 New Listing: {name}",
@@ -332,13 +335,15 @@ async def track_nft_events():
                     for channel in channels:
                         if channel:
                             if components:
-                                await channel.send(embed=embed, view=components)
+                                await channel.send(content=role_mention or None, embed=embed, view=components)
                             else:
-                                await channel.send(embed=embed)
+                                await channel.send(content=role_mention or None, embed=embed)
+
                     print(f"[SENT] Listing: {name} for {price} SOL")
                     last_listing_ids.add(mint)
                 if not new_listings:
                     print("[LOG] No new listings found.")
+                    
                 # Send new buys (oldest first) as embeds with fallbacks
                 for item in new_buys:
                     price = item.get('price', 'N/A')
@@ -431,6 +436,7 @@ async def track_nft_events():
                         components = MEView()
                     except Exception:
                         pass
+
                     for channel in channels:
                         if channel:
                             if components:
