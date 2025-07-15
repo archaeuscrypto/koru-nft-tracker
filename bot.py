@@ -29,6 +29,13 @@ RARITY_ROLE_IDS = {
     "rare": 1394730089480196158
 }
 
+TIER_ROLES = {
+    "mythic": "Mythic Alerts",
+    "legendary": "Legendary Alerts",
+    "epic": "Epic Alerts",
+    "rare": "Rare Alerts"
+}
+
 @bot.event
 async def on_message(message):
     # Allow messages from the bot itself and allowed users
