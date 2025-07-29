@@ -198,7 +198,7 @@ async def toppholders(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"Error fetching top holders: {e}")
 
-@tasks.loop(seconds=60)
+@tasks.loop(minutes=2)
 async def track_nft_events():
     await bot.wait_until_ready()
     channels = [bot.get_channel(cid) for cid in CHANNEL_IDS]
